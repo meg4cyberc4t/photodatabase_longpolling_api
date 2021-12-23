@@ -1,13 +1,19 @@
+from datetime import time
+from re import X
 from flask import Flask, config, json, request, abort, send_file, jsonify, render_template
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import response
 import json
+import asyncio
 import os
 
 from database_controller import DatabaseController
 from error import ApiErrors
+from longpolling_methods import getHashFromState
 
 app = Flask(__name__, static_folder='../photodatabase/build/web')
+
+LONG_POLLING_TIMING_SECONDS = 2
 
 @app.route('/', methods=['GET'])
 def index():
@@ -100,6 +106,40 @@ def deleteLink(id, folder):
 def getUnion():
     return jsonify(db.getUnion())
 
+### Для LP снизу
+# @app.route('/api/folder/<id>', methods=['GET'])
+# def getFolder(id):
+#     if not id.isnumeric:
+#         return ApiErrors.badArgumentsError.jsonify()
+#     return jsonify(db.folders.get(id=id))
+
+# @app.route('/api/folder/', methods=['GET'])
+# def getFolders():
+#     return jsonify(db.folders.getAll())
+
+# @app.route('/api/image/', methods=['GET'])
+# def getImage():
+#     return jsonify(db.image.getAll())
+
+# @app.route('/api/image/<id>', methods=['GET'])
+# def getImages(id):
+#     return jsonify(db.image.get(id=id))
+
+@app.route('/lp/union', methods=['GET'])
+async def getUnionLongPolling():
+    last_state_hash = request.form.get('last_state_hash')
+    if (last_state_hash == None):
+        output = db.getUnion()
+        return jsonify({"state": output, "hash": getHashFromState(output)})
+    else:
+        output = db.getUnion()
+        hash = getHashFromState(output)
+        while last_state_hash == hash:
+            await asyncio.sleep(LONG_POLLING_TIMING_SECONDS)
+            output = db.getUnion()
+            hash = getHashFromState(output)
+        return jsonify({"state": output, "hash": getHashFromState(output)})
+  
 
 def main():
     app.config.from_file("config.json", load=json.load)
@@ -119,7 +159,8 @@ def main():
     app.run(
         debug=False, 
         port=1117,
-        # host='db-learning.ithub.ru'
+        # host='db-learning.ithub.ru',
+        threaded=True,
     )
     del db
 
