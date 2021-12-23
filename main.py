@@ -1,7 +1,11 @@
 from flask import Flask, config, json, request, abort, send_file, jsonify, render_template
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import response
+import json
 import os
+
+
+
 
 app = Flask(__name__, static_folder='../photodatabase/build/web')
 
@@ -12,6 +16,16 @@ def index():
 @app.route('/<path:path>')
 def static_file(path):
     return app.send_static_file(path)
+
+
+def main():
+    app.config.from_file("config.json", load=json.load)
+    __dbpassword = app.config.get("DBPASSWORD")
+    if not __dbpassword:
+        raise ValueError("Not found DBPASSWORD in config.json. Check README.MD!")
+
+if __name__ == "__main__":
+    main()
 
 
 # @app.route('/api/getFolders', methods=['GET'])
@@ -97,16 +111,16 @@ def static_file(path):
     
 
 
-if __name__ == '__main__':
-    global db 
-    config = {
-        'host': 'db-learning.ithub.ru',
-        'user': '2p1s16',
-        'password':'134-285-256',
-        'database':'2p1s16',
-        'autocommit':True,
-        'charset':'utf8mb4',
-    }
+# if __name__ == '__main__':
+#     global db 
+#     config = {
+#         'host': 'db-learning.ithub.ru',
+#         'user': '2p1s16',
+#         'password':'134-285-256',
+#         'database':'2p1s16',
+#         'autocommit':True,
+#         'charset':'utf8mb4',
+#     }
     # db = DatabaseController(config)
 
-    app.run(debug=False, port=1116,host='db-learning.ithub.ru')
+    # app.run(debug=False, port=1116,host='db-learning.ithub.ru')
