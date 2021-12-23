@@ -9,3 +9,4 @@ class ApiError:
 
 class ApiErrors:
     badArgumentsError = ApiError('Bad arguments. Check what you are sending to the server!')
+    badFileType = ApiError('Bad data type. Are you sure you\'re sending a jpeg?')
