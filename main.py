@@ -133,6 +133,7 @@ def getFolderLongPooling(id):
     else:
         return jsonify(longPolling(last_state_hash, db.folders.get, {"id":id}))
 
+
 @app.route('/lp/folder/', methods=['GET'])
 def getFoldersLongPooling():
     last_state_hash = request.form.get('last_state_hash')
@@ -142,6 +143,7 @@ def getFoldersLongPooling():
     else:
         return jsonify(longPolling(last_state_hash, db.folders.getAll))
 
+
 @app.route('/lp/image/', methods=['GET'])
 def getImageLongPooling():
     last_state_hash = request.form.get('last_state_hash')
@@ -150,6 +152,7 @@ def getImageLongPooling():
         return jsonify({"state": output, "hash": getHashFromState(output)})
     else:
         return jsonify(longPolling(last_state_hash, db.image.getAll))
+
 
 @app.route('/lp/image/<id>', methods=['GET'])
 def getImagesLongPooling(id):

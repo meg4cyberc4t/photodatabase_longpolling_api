@@ -142,8 +142,6 @@ class Images:
             return result
    
 
-  
-
 class DatabaseController:
     def __init__(self, config) -> None:
         self.connection = pymysql.connect(**config)
