@@ -96,7 +96,6 @@ def postLink(id, folder):
 def deleteLink(id, folder):
     return jsonify(db.images.removeFromFolder(image_id=id, folder_id=folder))
 
-
 @app.route('/api/union', methods=['GET'])
 def getUnion():
     return jsonify(db.getUnion())
