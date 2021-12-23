@@ -6,15 +6,11 @@ selectCursor = pymysql.cursors.DictCursor
 def __parsingTime(time):
     return time.strftime('%Y-%m-%d %H:%M:%S')
 
-class DatabaseController:
-    def __init__(self, config) -> None:
-        self.connection = pymysql.connect(**config)
-        self.cursor = self.connection.cursor()
+class Folders:
+        def __init__(self, connection, cursor):
+            self.connection = connection
+            self.cursor = cursor
 
-    def __exit__(self):
-        self.connection.close()
-
-    class folders:
         def create(self, title: str, description: str):
             self.connection.ping()
             with self.connection.cursor(cursor=selectCursor) as cursor:
@@ -48,7 +44,7 @@ class DatabaseController:
                 cursor.execute(sql, (id))
                 result = cursor.fetchone()
             return result
-        
+
         def getAll(self):
             self.connection.ping()
             with self.connection.cursor(cursor=selectCursor) as cursor:
@@ -62,8 +58,27 @@ class DatabaseController:
         
         def removeImage(self, image_id: str, folder_id: str) -> None:
             return self.__removeImageFromFolder(image_id=image_id, folder_id=folder_id)
+
+        def __removeImageFromFolder(self, image_id: str, folder_id: str) -> None:
+            with self.connection.cursor(cursor=selectCursor) as cursor:
+                sql = "DELETE FROM photo_database_links WHERE folder_id = %s AND image_id = %s"
+                cursor.execute(sql, (folder_id, image_id))
+                result = cursor.fetchone()
+            return result
         
-    class images:
+        def __addToFolder(self, image_id: str, folder_id: str):
+            with self.connection.cursor(cursor=selectCursor) as cursor:
+                sql = "INSERT INTO photo_database_links VALUES(NULL, %s, %s) RETURNING id"
+                cursor.execute(sql, (folder_id, image_id))
+                result = cursor.fetchone()
+            return result
+
+
+class Images:
+        def __init__(self, connection, cursor):
+                self.connection = connection
+                self.cursor = cursor
+
         def create(self, title: str, description: str, path: str):
             self.connection.ping()
             with self.connection.cursor(cursor=selectCursor) as cursor:
@@ -112,19 +127,31 @@ class DatabaseController:
         def removeFromFolder(self, image_id: str, folder_id: str) -> None:
             return self.__removeImageFromFolder(image_id=image_id, folder_id=folder_id)
 
-    def __removeImageFromFolder(self, image_id: str, folder_id: str) -> None:
-            with self.connection.cursor(cursor=selectCursor) as cursor:
-                sql = "DELETE FROM photo_database_links WHERE folder_id = %s AND image_id = %s"
-                cursor.execute(sql, (folder_id, image_id))
-                result = cursor.fetchone()
-            return result
-
-    def __addToFolder(self, image_id: str, folder_id: str):
+        def __removeImageFromFolder(self, image_id: str, folder_id: str) -> None:
+                with self.connection.cursor(cursor=selectCursor) as cursor:
+                    sql = "DELETE FROM photo_database_links WHERE folder_id = %s AND image_id = %s"
+                    cursor.execute(sql, (folder_id, image_id))
+                    result = cursor.fetchone()
+                return result
+            
+        def __addToFolder(self, image_id: str, folder_id: str):
             with self.connection.cursor(cursor=selectCursor) as cursor:
                 sql = "INSERT INTO photo_database_links VALUES(NULL, %s, %s) RETURNING id"
                 cursor.execute(sql, (folder_id, image_id))
                 result = cursor.fetchone()
             return result
+   
+
+  
+
+class DatabaseController:
+    def __init__(self, config) -> None:
+        self.connection = pymysql.connect(**config)
+        self.cursor = self.connection.cursor()
+        self.folders = Folders(self.connection, self.cursor)
+
+    def __exit__(self):
+        self.connection.close()
 
     def getUnion(self):
         self.connection.ping()
