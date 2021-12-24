@@ -10,3 +10,5 @@ class ApiError:
 class ApiErrors:
     badArgumentsError = ApiError('Bad arguments. Check what you are sending to the server!')
     badFileType = ApiError('Bad data type. Are you sure you\'re sending a jpeg?')
+    notFound = ApiError('Resource not found! Check the availability of the method in the documentation')
+    serverError = ApiError('Error on the server side.')

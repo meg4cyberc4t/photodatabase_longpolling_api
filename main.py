@@ -1,6 +1,7 @@
 import time
 from re import X
 from flask import Flask, config, json, request, abort, send_file, jsonify, render_template
+from flask.wrappers import Response
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import response
 import json
@@ -164,6 +165,20 @@ def getImagesLongPooling(id):
         return jsonify(longPolling(last_state_hash, db.image.get, {"id":id}))
 
 
+@app.errorhandler(404)
+def error404(error):
+    return ApiErrors.notFound.jsonify()
+
+@app.errorhandler(500)
+def error500(error):
+    return ApiErrors.serverError.jsonify()
+
+@app.after_request
+def after_request(response):
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
+
 def main():
     app.config.from_file("config.json", load=json.load)
     __dbpassword = app.config.get("DBPASSWORD")
@@ -181,8 +196,8 @@ def main():
     db = DatabaseController(config)
     app.run(
         debug=False, 
-        port=1117,
-        host='db-learning.ithub.ru',
+        port=1116,
+        # host='db-learning.ithub.ru',
         threaded=True,
     )
     del db
