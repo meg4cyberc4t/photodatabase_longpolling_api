@@ -44,7 +44,8 @@ class Folders:
             result = cursor.fetchone()
             sql = "SELECT * FROM photo_database_images WHERE id IN (SELECT photo_id FROM `vsa11` WHERE folder_id = %s)"
             cursor.execute(sql, (id))
-            result.update({"photos": cursor.fetchall()})
+            if (result != None):
+                result.update({"photos": cursor.fetchall()})
         return result
 
     def getImagesIds(self, id: str):

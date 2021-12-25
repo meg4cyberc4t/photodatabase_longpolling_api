@@ -68,7 +68,7 @@ def getImage(id):
 
 @app.route('/api/image/<id>/show', methods=['GET'])
 def getImageShow(id):
-    return send_file(db.images.get(id)['path'])
+    return send_file(db.images.get(id)['path'], mimetype='image/jpg')
 
 @app.route('/api/image', methods=['POST'])
 def postImage():
