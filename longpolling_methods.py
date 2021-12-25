@@ -4,7 +4,7 @@ import time
 def longPolling(last_state_hash, getDataCallback, counter=30,  **args):
     output = getDataCallback(**args)
     hash = getHashFromState(output) 
-    while last_state_hash == hash or counter > 0:
+    while last_state_hash == hash and counter > 0:
         counter -= 1
         time.sleep(1)
         output = getDataCallback(**args)

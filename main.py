@@ -204,10 +204,10 @@ def main():
     app.run(
         debug=False, 
         port=1116,
-        host='db-learning.ithub.ru',
+        # host='db-learning.ithub.ru',
+        host='192.168.0.118',
         threaded=True,
     )
-    db.close()
 
 if __name__ == "__main__":
     main()
