@@ -30,13 +30,15 @@ ALTER TABLE `photo_database_links` ADD CONSTRAINT `photo_database_links_fk1` FOR
 
 
 
-CREATE VIEW vs10 AS 
+CREATE VIEW vsa11 AS 
 SELECT 
-photo_database_images.id as "id", 
-photo_database_images.title as "title",
-photo_database_images.description as "description", 
-photo_database_images.load_datatime as "load_datetime", 
-photo_database_folders.title as "folder_title"
+photo_database_images.id as "photo_id", 
+photo_database_images.title as "photo_title",
+photo_database_images.description as "photo_description", 
+photo_database_images.load_datatime as "photo_load_datetime", 
+photo_database_images.last_edit_datatime as "photo_last_edit_datetime", 
+photo_database_folders.title as "folder_title",
+photo_database_folders.id as "folder_id"
 FROM photo_database_images
 LEFT JOIN photo_database_links
 ON photo_database_images.id = photo_database_links.image_id

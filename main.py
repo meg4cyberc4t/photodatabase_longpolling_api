@@ -59,12 +59,16 @@ def getFolders():
     return jsonify(db.folders.getAll())
 
 @app.route('/api/image/', methods=['GET'])
-def getImage():
-    return jsonify(db.image.getAll())
+def getImages():
+    return jsonify(db.images.getAll())
 
 @app.route('/api/image/<id>', methods=['GET'])
-def getImages(id):
-    return jsonify(db.image.get(id=id))
+def getImage(id):
+    return jsonify(db.images.get(id=id))
+
+@app.route('/api/image/<id>/show', methods=['GET'])
+def getImageShow(id):
+    return send_file(db.images.get(id)['path'])
 
 @app.route('/api/image', methods=['POST'])
 def postImage():
@@ -115,29 +119,28 @@ def getUnion():
 # longpooling подряд, но в большом пользовании (больше одного-двух человек)
 # не поленитесь поставить последнюю версию питона :)
 def getUnionLongPolling():
-    last_state_hash = request.form.get('last_state_hash')
+    last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.getUnion()
         return jsonify({"state": output, "hash": getHashFromState(output)})
     else:
         return jsonify(longPolling(last_state_hash, db.getUnion))
   
-
-@app.route('/lp/folder/<id>', methods=['GET'])
+@app.route('/lp/folder/<id>/', methods=['GET'])
 def getFolderLongPooling(id):
     if not id.isnumeric:
         return ApiErrors.badArgumentsError.jsonify()
-    last_state_hash = request.form.get('last_state_hash')
+    last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.folders.get(id=id)
         return jsonify({"state": output, "hash": getHashFromState(output)})
     else:
-        return jsonify(longPolling(last_state_hash, db.folders.get, {"id":id}))
+        return jsonify(longPolling(last_state_hash, db.folders.get, id=id))
 
 
 @app.route('/lp/folder/', methods=['GET'])
 def getFoldersLongPooling():
-    last_state_hash = request.form.get('last_state_hash')
+    last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.folders.getAll()
         return jsonify({"state": output, "hash": getHashFromState(output)})
@@ -147,26 +150,28 @@ def getFoldersLongPooling():
 
 @app.route('/lp/image/', methods=['GET'])
 def getImageLongPooling():
-    last_state_hash = request.form.get('last_state_hash')
+    last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.folders.getAll()
         return jsonify({"state": output, "hash": getHashFromState(output)})
     else:
-        return jsonify(longPolling(last_state_hash, db.image.getAll))
+        return jsonify(longPolling(last_state_hash, db.images.getAll))
 
 
-@app.route('/lp/image/<id>', methods=['GET'])
+@app.route('/lp/image/<id>/', methods=['GET'])
 def getImagesLongPooling(id):
-    last_state_hash = request.form.get('last_state_hash')
+    last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.image.get(id=id)
         return jsonify({"state": output, "hash": getHashFromState(output)})
     else:
-        return jsonify(longPolling(last_state_hash, db.image.get, {"id":id}))
+        return jsonify(longPolling(last_state_hash, db.images.get, id=id))
 
 
 @app.errorhandler(404)
 def error404(error):
+    print(error)
+    print(404)
     return ApiErrors.notFound.jsonify()
 
 @app.errorhandler(500)
@@ -176,7 +181,6 @@ def error500(error):
 @app.after_request
 def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Content-Type'] = 'application/json'
     return response
 
 
@@ -198,7 +202,7 @@ def main():
     app.run(
         debug=False, 
         port=1116,
-        # host='db-learning.ithub.ru',
+        host='db-learning.ithub.ru',
         threaded=True,
     )
     db.close()

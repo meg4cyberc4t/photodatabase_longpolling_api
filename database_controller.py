@@ -152,7 +152,7 @@ class DatabaseController:
     def getUnion(self):
         self.connection.ping()
         with self.connection.cursor(cursor=selectCursor) as cursor:
-            sql = 'SELECT * FROM vs10'
+            sql = 'SELECT * FROM vsa11'
             cursor.execute(sql)
             result = cursor.fetchall()
         return result
