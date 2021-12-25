@@ -175,6 +175,7 @@ def error500(error):
 
 @app.after_request
 def after_request(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Content-Type'] = 'application/json'
     return response
 
@@ -189,7 +190,7 @@ def main():
         'user': '2p1s16',
         'password':__dbpassword,
         'database':'2p1s16',
-        'autocommit':True,
+        'autocommit': True,
         'charset':'utf8mb4',
     }
     global db 
@@ -200,7 +201,7 @@ def main():
         # host='db-learning.ithub.ru',
         threaded=True,
     )
-    del db
+    db.close()
 
 if __name__ == "__main__":
     main()
