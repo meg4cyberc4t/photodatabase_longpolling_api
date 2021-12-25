@@ -3,7 +3,7 @@ from datetime import datetime
 
 selectCursor = pymysql.cursors.DictCursor
 
-def __parsingTime(time):
+def _parsingTime(time):
     return time.strftime('%Y-%m-%d %H:%M:%S')
 
 class Folders:
@@ -13,7 +13,7 @@ class Folders:
     def create(self, title: str, description: str):
         self.connection.ping()
         with self.connection.cursor(cursor=selectCursor) as cursor:
-            now = __parsingTime(datetime.now())
+            now = _parsingTime(datetime.now())
             sql = "INSERT INTO photo_database_folders VALUES(NULL, %s, %s, %s, %s) RETURNING id"
             cursor.execute(sql, (title, description, now, now))
             result = cursor.fetchone()
@@ -22,7 +22,7 @@ class Folders:
     def edit(self, id: str, title: str, description: str) -> None:
         self.connection.ping()
         with self.connection.cursor(cursor=selectCursor) as cursor:
-            now = __parsingTime(datetime.now())
+            now = _parsingTime(datetime.now())
             sql = "UPDATE title = %s, description = %s, last_edit_datatime = %s FROM photo_database_folders WHERE id = %s"
             cursor.execute(sql, (title, description, now, id))
         return
@@ -92,7 +92,7 @@ class Images:
     def create(self, title: str, description: str, path: str):
         self.connection.ping()
         with self.connection.cursor(cursor=selectCursor) as cursor:
-            now = __parsingTime(datetime.now())
+            now = _parsingTime(datetime.now())
             sql = "INSERT INTO photo_database_images VALUES(NULL, %s, %s, %s, %s, %s) RETURNING id"
             cursor.execute(sql, (title, description, path, now, now))
             result = cursor.fetchone()
@@ -101,7 +101,7 @@ class Images:
     def edit(self, id: str, title: str, description: str) -> None:
         self.connection.ping()
         with self.connection.cursor(cursor=selectCursor) as cursor:
-            now = __parsingTime(datetime.now())
+            now = _parsingTime(datetime.now())
             sql = "UPDATE title = %s, description = %s, last_edit_datatime = %s FROM photo_database_images WHERE id = %s"
             cursor.execute(sql, (title, description, now, id))
         return

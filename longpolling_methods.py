@@ -1,13 +1,12 @@
 import hashlib
 import time
 
-LONG_POLLING_TIMING_SECONDS = 2
-
-def longPolling(last_state_hash, getDataCallback, **args):
+def longPolling(last_state_hash, getDataCallback, counter=30,  **args):
     output = getDataCallback(**args)
-    hash = getHashFromState(output)
-    while last_state_hash == hash:
-        time.sleep(LONG_POLLING_TIMING_SECONDS)
+    hash = getHashFromState(output) 
+    while last_state_hash == hash or counter > 0:
+        counter -= 1
+        time.sleep(1)
         output = getDataCallback(**args)
         hash = getHashFromState(output)
     return {"state": output, "hash": getHashFromState(output)}

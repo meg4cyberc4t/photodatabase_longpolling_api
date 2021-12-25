@@ -27,7 +27,9 @@ def static_file(path):
 def postFolder():
     title = request.form.get('title')
     description = request.form.get('description')
-    if title.isspace:
+    print(title)
+    print(description)
+    if title.strip() == "":
         return ApiErrors.badArgumentsError.jsonify()
     return jsonify(db.folders.create(title=title, description=description))
 
