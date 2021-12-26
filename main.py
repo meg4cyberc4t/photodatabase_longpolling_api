@@ -1,5 +1,6 @@
 import time
 from re import X
+from random import randint
 from flask import Flask, config, json, request, abort, send_file, jsonify, render_template
 from flask.wrappers import Response
 from werkzeug.utils import secure_filename
@@ -7,6 +8,7 @@ from werkzeug.wrappers import response
 import json
 import asyncio
 import os
+from datetime import datetime
 
 from database_controller import DatabaseController
 from error import ApiErrors
@@ -27,14 +29,12 @@ def static_file(path):
 def postFolder():
     title = request.form.get('title')
     description = request.form.get('description')
-    print(title)
-    print(description)
     if title.strip() == "":
         return ApiErrors.badArgumentsError.jsonify()
     return jsonify(db.folders.create(title=title, description=description))
 
 
-@app.route('/api/folder/<id>', methods=['PATCH'])
+@app.route('/api/folder/<id>/edit', methods=['POST'])
 def patchFolder(id):
     title = request.form.get('title')
     description = request.form.get('description')
@@ -43,12 +43,11 @@ def patchFolder(id):
     return jsonify(db.folders.edit(id=id, title=title, description=description))
 
 
-@app.route('/api/folder/<id>', methods=['DELETE'])
+@app.route('/api/folder/<id>/delete', methods=['POST'])
 def deleteFolder(id):
     if not id.isnumeric:
         return ApiErrors.badArgumentsError.jsonify()
-    db.folders.delete(id=id)
-    return 
+    return jsonify(db.folders.delete(id=id))
 
 @app.route('/api/folder/<id>', methods=['GET'])
 def getFolder(id):
@@ -72,55 +71,45 @@ def getImage(id):
 def getImageShow(id):
     return send_file(db.images.get(id)['path'], mimetype='image/jpg')
 
-@app.route('/api/image', methods=['POST'])
+@app.route('/api/image/', methods=['POST'])
 def postImage():
     image = request.files['file']
     title = request.form.get('title')
     description = request.form.get('description')
-    folder_id = request.form.get('folder_id')
-    if image.content_type.split('/')[0] == "image":
+    # folder_id = request.form.get('folder_id')
+    if image.content_type.split('/')[0] != "image":
         return ApiErrors.badFileType.jsonify()
-    filename = secure_filename(image.filename)
-    path = "photos/" + filename
+    path = "photos/" + secure_filename(title + description + str(randint(1, 100000)) + str(datetime.now()))
     image.save(path)
     create_image = db.images.create(title=title, description=description, path=path)
-    if folder_id != 'null':
-        db.linkImage(create_image['id'], folder_id)
+    # if folder_id != 'null':
+    #     db.linkImage(create_image['id'], folder_id)
     return jsonify(create_image)
 
-@app.route('/api/image/<id>', methods=['PATCH'])
+@app.route('/api/image/<id>/edit', methods=['POST'])
 def patchImage(id):
     title = request.form.get('title')
     description = request.form.get('description')
     return jsonify(db.images.edit(id=id,title=title, description=description))
 
-@app.route('/api/image/<id>', methods=['DELETE'])
+@app.route('/api/image/<id>/delete', methods=['POST'])
 def deleteImage(id):
-    db.images.delete(id=id)
-    return
+    return jsonify(db.images.delete(id=id))
 
 @app.route('/api/image/<id>/link/<folder>', methods=['POST'])
 def postLink(id, folder):
     return jsonify(db.images.addToFolder(image_id=id, folder_id=folder))
 
-@app.route('/api/image/<id>/link/<folder>', methods=['DELETE'])
-def deleteLink(id, folder):
-    return jsonify(db.images.removeFromFolder(image_id=id, folder_id=folder))
+# @app.route('/api/image/<id>/link/<folder>', methods=['DELETE'])
+# def deleteLink(id, folder):
+#     return jsonify(db.images.removeFromFolder(image_id=id, folder_id=folder))
 
 @app.route('/api/union', methods=['GET'])
 def getUnion():
     return jsonify(db.getUnion())
 
-### Long polling
 @app.route('/lp/union', methods=['GET'])
-# ЭТО НЕПРАВИЛЬНО, LONGPOLLING ЭТО ПОСЛЕДНЯЯ В МИРЕ
-# ФУНКЦИЯ, КОТОРАЯ ДОЛЖНА БЫТЬ СИНХРОННОЙ, НО!
-# Тут питон 3.6.8 (async await появятся только в 3.7), 
-# А так же вообще нет docker.
-# Я запущу сервер в многопоточном режиме, из-за чего выйграю 2-3 
-# longpooling подряд, но в большом пользовании (больше одного-двух человек)
-# не поленитесь поставить последнюю версию питона :)
-def getUnionLongPolling():
+async def getUnionLongPolling():
     last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.getUnion()
@@ -129,7 +118,7 @@ def getUnionLongPolling():
         return jsonify(longPolling(last_state_hash, db.getUnion))
   
 @app.route('/lp/folder/<id>/', methods=['GET'])
-def getFolderLongPooling(id):
+async def getFolderLongPooling(id):
     if not id.isnumeric:
         return ApiErrors.badArgumentsError.jsonify()
     last_state_hash = request.args['last_state_hash']
@@ -141,7 +130,7 @@ def getFolderLongPooling(id):
 
 
 @app.route('/lp/folder/', methods=['GET'])
-def getFoldersLongPooling():
+async def getFoldersLongPooling():
     last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.folders.getAll()
@@ -151,7 +140,7 @@ def getFoldersLongPooling():
 
 
 @app.route('/lp/image/', methods=['GET'])
-def getImageLongPooling():
+async def getImageLongPooling():
     last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.folders.getAll()
@@ -161,7 +150,7 @@ def getImageLongPooling():
 
 
 @app.route('/lp/image/<id>/', methods=['GET'])
-def getImagesLongPooling(id):
+async def getImagesLongPooling(id):
     last_state_hash = request.args['last_state_hash']
     if (last_state_hash == None):
         output = db.image.get(id=id)
@@ -177,11 +166,11 @@ def error404(error):
     return ApiErrors.notFound.jsonify()
 
 @app.errorhandler(500)
-def error500(error):
+async def error500(error):
     return ApiErrors.serverError.jsonify()
 
 @app.after_request
-def after_request(response):
+async def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -202,11 +191,12 @@ def main():
     global db 
     db = DatabaseController(config)
     app.run(
-        debug=False, 
+        debug=True, 
         port=1116,
         # host='db-learning.ithub.ru',
         host='192.168.0.118',
-        threaded=True,
+        # host='192.168.1.71',
+        # threaded=True,
     )
 
 if __name__ == "__main__":

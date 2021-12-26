@@ -5,6 +5,7 @@ class ApiError:
         self.message = message
     
     def jsonify(self):
+        print(jsonify({"error": self.message}))
         return jsonify({"error": self.message})
 
 class ApiErrors:

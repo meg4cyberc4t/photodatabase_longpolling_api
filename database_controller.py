@@ -1,12 +1,10 @@
 import pymysql
 import pymysqlpool
 
-from datetime import datetime 
 
 selectCursor = pymysql.cursors.DictCursor
 
-def _parsingTime(time):
-    return time.strftime('%Y-%m-%d %H:%M:%S')
+
 
 class Folders:
     def __init__(self, pool):
@@ -15,20 +13,23 @@ class Folders:
     def create(self, title: str, description: str):
         connection = self.pool.get_connection()
         with connection.cursor(cursor=selectCursor) as cursor:
-            now = _parsingTime(datetime.now())
-            sql = "INSERT INTO photo_database_folders VALUES(NULL, %s, %s, %s, %s) RETURNING id"
-            cursor.execute(sql, (title, description, now, now))
+            sql = "INSERT INTO photo_database_folders VALUES(NULL, %s, %s) RETURNING id"
+            cursor.execute(sql, (title, description))
             result = cursor.fetchone()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
 
     def edit(self, id: str, title: str, description: str) -> None:
         connection = self.pool.get_connection()
-        with connection.cursor(cursor=selectCursor) as cursor:
-            now = _parsingTime(datetime.now())
-            sql = "UPDATE title = %s, description = %s, last_edit_datatime = %s FROM photo_database_folders WHERE id = %s"
-            cursor.execute(sql, (title, description, now, id))
-        connection.close()
+        if (len(title) > 0):
+            with connection.cursor(cursor=selectCursor) as cursor:
+                sql = "UPDATE photo_database_folders SET  title = %s WHERE id = %s"
+                cursor.execute(sql, (title, id))
+        if (len(description) > 0):
+            with connection.cursor(cursor=selectCursor) as cursor:
+                sql = "UPDATE photo_database_folders SET  description = %s WHERE id = %s"
+                cursor.execute(sql, (description, id))
+        self.pool.put_connection(connection)
         return
 
     def delete(self, id: str) -> None:
@@ -38,7 +39,7 @@ class Folders:
             cursor.execute(sql, (id))
             sql = "DELETE FROM photo_database_folders WHERE id = %s"
             cursor.execute(sql, (id))
-        connection.close()
+        self.pool.put_connection(connection)
         return
     
     def get(self, id: str):
@@ -51,7 +52,7 @@ class Folders:
             cursor.execute(sql, (id))
             if (result != None):
                 result.update({"photos": cursor.fetchall()})
-        connection.close()
+        self.pool.put_connection(connection)
         return result
 
     def getImagesIds(self, id: str):
@@ -60,7 +61,7 @@ class Folders:
             sql = "SELECT * FROM photo_database_links WHERE folder_id = %s"
             cursor.execute(sql, (id))
             result = cursor.fetchall() 
-        connection.close()
+        self.pool.put_connection(connection)
         return result
 
     def getAll(self):
@@ -69,7 +70,7 @@ class Folders:
             sql = "SELECT * FROM photo_database_folders"
             cursor.execute(sql)
             result = cursor.fetchall()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
 
     def addImage(self, image_id: str, folder_id: str):
@@ -84,7 +85,7 @@ class Folders:
             sql = "DELETE FROM photo_database_links WHERE folder_id = %s AND image_id = %s"
             cursor.execute(sql, (folder_id, image_id))
             result = cursor.fetchone()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
     
     def __addToFolder(self, image_id: str, folder_id: str):
@@ -93,7 +94,7 @@ class Folders:
             sql = "INSERT INTO photo_database_links VALUES(NULL, %s, %s) RETURNING id"
             cursor.execute(sql, (folder_id, image_id))
             result = cursor.fetchone()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
 
 
@@ -104,20 +105,18 @@ class Images:
     def create(self, title: str, description: str, path: str):
         connection = self.pool.get_connection()
         with connection.cursor(cursor=selectCursor) as cursor:
-            now = _parsingTime(datetime.now())
-            sql = "INSERT INTO photo_database_images VALUES(NULL, %s, %s, %s, %s, %s) RETURNING id"
-            cursor.execute(sql, (title, description, path, now, now))
+            sql = "INSERT INTO photo_database_images VALUES(NULL, %s, %s) RETURNING id"
+            cursor.execute(sql, (title, path))
             result = cursor.fetchone()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
 
     def edit(self, id: str, title: str, description: str) -> None:
         connection = self.pool.get_connection()
         with connection.cursor(cursor=selectCursor) as cursor:
-            now = _parsingTime(datetime.now())
-            sql = "UPDATE title = %s, description = %s, last_edit_datatime = %s FROM photo_database_images WHERE id = %s"
-            cursor.execute(sql, (title, description, now, id))
-            connection.close()
+            sql = "UPDATE photo_database_images SET  title = %s WHERE id = %s"
+            cursor.execute(sql, (title, description, id))
+        self.pool.put_connection(connection)
         return
 
     def delete(self, id: str) -> None:
@@ -127,7 +126,7 @@ class Images:
             cursor.execute(sql, (id))
             sql = "DELETE FROM photo_database_images WHERE id = %s"
             cursor.execute(sql, (id))
-            connection.close()
+        self.pool.put_connection(connection)
         return
     
     def get(self, id: str):
@@ -136,7 +135,7 @@ class Images:
             sql = "SELECT * FROM photo_database_images WHERE id = %s"
             cursor.execute(sql, (id))
             result = cursor.fetchone()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
     
     def getAll(self):
@@ -145,7 +144,7 @@ class Images:
             sql = "SELECT * FROM photo_database_images"
             cursor.execute(sql)
             result = cursor.fetchall()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
     
     def addToFolder(self, image_id: str, folder_id: str):
@@ -160,7 +159,7 @@ class Images:
                 sql = "DELETE FROM photo_database_links WHERE folder_id = %s AND image_id = %s"
                 cursor.execute(sql, (folder_id, image_id))
                 result = cursor.fetchone()
-            connection.close()
+            self.pool.put_connection(connection)
             return result
         
     def __addToFolder(self, image_id: str, folder_id: str):
@@ -169,13 +168,13 @@ class Images:
             sql = "INSERT INTO photo_database_links VALUES(NULL, %s, %s) RETURNING id"
             cursor.execute(sql, (folder_id, image_id))
             result = cursor.fetchone()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
    
 
 class DatabaseController:
     def __init__(self, config) -> None:
-        self.pool = pymysqlpool.ConnectionPool(size=10, name='pool', **config)
+        self.pool = pymysqlpool.ConnectionPool(size=20, name='pool', **config)
         self.folders = Folders(self.pool)
         self.images = Images(self.pool)
 
@@ -185,5 +184,5 @@ class DatabaseController:
             sql = 'SELECT * FROM vsa11'
             cursor.execute(sql)
             result = cursor.fetchall()
-        connection.close()
+        self.pool.put_connection(connection)
         return result
